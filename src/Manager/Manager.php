@@ -24,11 +24,6 @@ class Manager
         {
             $blnUpdate = true;
         }
-        elseif (!file_exists($strTempDir))
-        {
-            $blnUpdate = true;
-            mkdir($strTempDir);
-        }
         else
         {
             if (!file_exists($strTempDir . '/file-info.json'))
@@ -42,6 +37,13 @@ class Manager
                 // check for modified files
                 $blnUpdate = static::checkFilesForUpdate($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrFileInfo);
             }
+        }
+
+        // temp dir
+        if (!file_exists($strTempDir))
+        {
+            $blnUpdate = true;
+            mkdir($strTempDir);
         }
 
         if ($blnUpdate)
