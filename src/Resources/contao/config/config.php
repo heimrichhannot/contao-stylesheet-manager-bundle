@@ -13,7 +13,8 @@ $GLOBALS['STYLESHEET_MANAGER'] = [
     'preprocessors' => [
         'scss' => [
             'class' => '\HeimrichHannot\StylesheetManagerBundle\Compiler\Scss',
-            'cmd' => '/usr/bin/compass compile --app-dir "##temp_dir##" --config "##config_file##" -I "##import_path##"'
+            'cmdDev' => '/usr/bin/compass compile --app-dir "##temp_dir##" --config "##config_file##" -I "##import_path##"',
+            'cmdProd' => '/usr/bin/compass compile -e production --app-dir "##temp_dir##" --config "##config_file##" -I "##import_path##"',
         ]
     ]
 ];

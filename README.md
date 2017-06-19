@@ -2,7 +2,20 @@
 
 This module offers functionality for handling different types of stylesheets in Contao.
 
-The possible types are (the order is mandatory):
+## Features
+
+- expandable architecture (new preprocessors like LESS can be added easily)
+- SCSS
+    - uses locally installed compass for compiling SCSS files (usually ```/usr/bin/compass```)
+    - full support for compass's config.rb
+- aggregating all files to a single CSS file
+- support for development and production environment
+- caching of the generated CSS file so that a full regeneration is only necessary if at least one of the linked files change
+- a random string is added to the name of the generated css file to bypass browser caches
+
+## Possible types of stylesheets
+
+Note: the order of types is mandatory.
 
 | Stylesheet type     | Description                                           | Supported formats                       | Overridable stylesheets |
 |---------------------|-------------------------------------------------------|-----------------------------------------|-------------------------|
@@ -17,30 +30,68 @@ Note: Even though project stylesheets are loaded *after* everything else, there'
 Note: This module is written in an expandable way, so new compilers can be added easily (e.g. LESS).
 
 - CSS
-- SCSS (compiled by compass)
+- SCSS (compiled by compass which is a requirement then -> tested successfully with version 1.0.3)
 
-## Features
+## Different behavior in development and production mode
 
-- uses locally installed compass for compiling SCSS files (usually ```/usr/bin/compass```)
-- full support for compass's config.rb
-- aggregating all files to a single CSS file
-- support for development and production environment
+
 
 ## Technical instructions
 
 ### Installation
 
-Add the following code to a config.php of some of your modules (according to your project):
-```
-$GLOBALS['TL_STYLESHEET_MANAGER_CSS'] = [
-    'core' => 'files/themes/my_project/scss/_core.scss',
-    'project' => 'files/themes/my_project/scss/_project.scss',
-];
-```
+1. Add the following code to a config.php of some of your modules (according to your project):
+    ```
+    $GLOBALS['TL_STYLESHEET_MANAGER_CSS'] = [
+        'core'    => [
+            'files/themes/my_project/scss/_variables.scss', // add the project's variables in order to override variables of libs like bootstrap
+            'files/themes/my_project/scss/_core.scss' // could contain libs like bootstrap or font awesome
+        ],
+        'project' => [
+            'files/themes/my_project/scss/mixins/_columns.scss',
+            'files/themes/my_project/scss/components/_accordion.scss',
+            'files/themes/my_project/scss/pages/_home.scss'
+        ]
+    ];
+    ```
+    
+    __Important note__: Every file can import other files, but these imported files are currently *not* inspected for changes. At this stage it's the best way to add all your partial scss files to ```$GLOBALS['TL_STYLESHEET_MANAGER_CSS']``` as shown above.
 
-_core.scss and _project.scss themselves can also contain @import statements, of course. If you like it better you could also define 'core' and 'project' to be arrays of css/scss files.
+2. Copy the contao template fe_page.html5 to your contao instance's templates directory and replace ```<?= $this->stylesheets ?>``` by ```<!-- stylesheetManagerCss -->``` (CAUTION: including the comment characters!).
 
-Copy the contao template fe_page.html5 to your contao instance's templates directory and replace ```<?= $this->stylesheets ?>``` by ```<!-- stylesheetManagerCss -->``` (CAUTION: including the comment characters!).
+### Add a new preprocessor
+
+1. Extend from Compiler (copy Scss.php if you like):
+
+    ```
+    <?php
+    
+    namespace Acme\MyBundle\Compiler;
+    
+    class Less extends Compiler
+    {
+        //...
+    }
+    ```
+
+2. Register the new preprocessor in the config:
+
+    ```
+    <?php
+    
+    // Acme\MyBundle\Resources/contao/config.php
+    
+    $GLOBALS['STYLESHEET_MANAGER']['preprocessors']['less'] = [
+        'class' => '\Acme\MyBundle\Compiler\Less',
+        'cmd' => 'less ...'
+    ];
+    ```
+
+3. Activate the new preprocessor:
+    
+    ```
+    $GLOBALS['STYLESHEET_MANAGER']['activePreprocessor'] = 'less';
+    ```
 
 ### Hooks
 
@@ -48,6 +99,8 @@ Name | Arguments | Description
 ---- | --------- | -----------
 modifyFrontendPage | $strBuffer, $strTemplate | Triggers the compiling.
 
-### TODO
+## TODO
 
 - support for contao's tags "static", "media", ... in asset paths added to the according arrays in ```$GLOBALS```
+- accomplish auto triggering of scss compiling if an *imported* file is changed (currently only files listed in TL_CSS, TL_USER_CSS, TL_FRAMEWORK, and TL_STYLESHEET_MANAGER_CSS are inspected for changes) -> maybe using compass watch
+- in Contao 4.4 -> make use of different environments
