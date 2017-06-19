@@ -2,15 +2,12 @@
 
 namespace HeimrichHannot\StylesheetManagerBundle\Manager;
 
-use Contao\File;
 use HeimrichHannot\StylesheetManagerBundle\Compiler\Compiler;
 
 class Manager
 {
     public static function run($strBuffer, $strTemplate)
     {
-        $start = microtime(true);
-
         if ($strTemplate !== 'fe_page')
         {
             return $strBuffer;
@@ -23,7 +20,7 @@ class Manager
         list($arrCoreFiles, $arrModuleFiles, $arrProjectFiles) = static::collectFiles();
 
         // check if a regeneration is needed
-        if (!$strCssFile)
+        if (!$strCssFile || !file_exists(TL_ROOT . '/' . $strCssFile))
         {
             $blnUpdate = true;
         }
@@ -63,14 +60,15 @@ class Manager
             $objCompiler->compile($strComposedFile);
 
             // clean up
-            array_map('unlink', glob(TL_ROOT . '/assets/css/stylesheet-manager_*.*'));
+            if (file_exists(TL_ROOT . '/' . $strCssFile))
+            {
+                unlink(TL_ROOT . '/' . $strCssFile);
+            }
 
             // integrate in fe_page
-            $strCssFile = 'assets/css/stylesheet-manager_' . uniqid() . '.css';
+            $strCssFile = 'assets/css/composed.css?v=' . time();
 
             \Config::persist('stylesheetManagerCssFilename', $strCssFile);
-
-            copy($strTempDir . '/css/composed.css', TL_ROOT . '/' . $strCssFile);
         }
 
         return str_replace('<!-- stylesheetManagerCss -->', '<link rel="stylesheet" href="' . $strCssFile . '">', $strBuffer);

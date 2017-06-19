@@ -59,6 +59,14 @@ Note: This module is written in an expandable way, so new compilers can be added
 
 2. Copy the contao template fe_page.html5 to your contao instance's templates directory and replace ```<?= $this->stylesheets ?>``` by ```<!-- stylesheetManagerCss -->``` (CAUTION: including the comment characters!).
 
+### Configuration
+
+Note: Take a look into ```config.php``` in order to see what properties can be adjusted.
+
+### Commands
+
+- clear the stylesheet manager cache: ```<contao dir>/vendor/bin/contao-console stylesheetmanager:cache:clear```
+
 ### Add a new preprocessor
 
 1. Extend from Compiler (copy Scss.php if you like):

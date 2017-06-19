@@ -54,7 +54,11 @@ class Scss extends Compiler
     public function compile($strComposedFile)
     {
         $strCommand = str_replace('##temp_dir##', $this->strTempDir, $GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['cmdProd']);
-        $strCommand = str_replace('##config_file##', TL_ROOT . '/vendor/heimrichhannot/contao-stylesheet-manager-bundle/src/Resources/contao/assets/ruby/config.rb', $strCommand);
+        $strCommand = str_replace(
+            '##config_file##',
+            TL_ROOT . '/' . ltrim($GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['config'], '/'),
+            $strCommand
+        );
         $strCommand = str_replace('##import_path##', TL_ROOT, $strCommand);
 
         exec($strCommand, $varOutput);

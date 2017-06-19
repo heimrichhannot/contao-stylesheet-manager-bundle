@@ -1,0 +1,5 @@
+services:
+    stylesheet-manager.command.cache.clear:
+        class: HeimrichHannot\StylesheetManagerBundle\Command\CacheCommand
+        tags:
+            -  { name: console.command }
