@@ -15,12 +15,13 @@ class Manager
 
         $strTempDir = TL_ROOT . '/system/tmp/stylesheet-manager';
         $strCssFile = \Config::get('stylesheetManagerCssFilename');
+        $strCssFileNoTimestamp = explode('?', $strCssFile)[0];
 
         // preparation
         list($arrCoreFiles, $arrModuleFiles, $arrProjectFiles) = static::collectFiles();
 
         // check if a regeneration is needed
-        if (!$strCssFile || !file_exists(TL_ROOT . '/' . $strCssFile))
+        if (!$strCssFile || !file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp))
         {
             $blnUpdate = true;
         }
@@ -50,6 +51,17 @@ class Manager
         {
             static::writeFileInfoToFile($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $strTempDir);
 
+            // clean up
+            if (file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp))
+            {
+                unlink(TL_ROOT . '/' . $strCssFileNoTimestamp);
+            }
+
+            if (file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp . '.map'))
+            {
+                unlink(TL_ROOT . '/' . $strCssFileNoTimestamp . '.map');
+            }
+
             // preprocessor specifics
             $strActivePreprocessor = $GLOBALS['STYLESHEET_MANAGER']['activePreprocessor'];
 
@@ -60,12 +72,6 @@ class Manager
             $objCompiler->prepareTempDir();
             $strComposedFile = $objCompiler->compose($arrCoreFiles, $arrModuleFiles, $arrProjectFiles);
             $objCompiler->compile($strComposedFile);
-
-            // clean up
-            if (file_exists(TL_ROOT . '/' . $strCssFile))
-            {
-                unlink(TL_ROOT . '/' . $strCssFile);
-            }
 
             // integrate in fe_page
             $strCssFile = 'assets/css/composed.css?v=' . time();
