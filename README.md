@@ -32,10 +32,6 @@ Note: This module is written in an expandable way, so new compilers can be added
 - CSS
 - SCSS (compiled by compass which is a requirement then -> tested successfully with version 1.0.3)
 
-## Different behavior in development and production mode
-
-
-
 ## Technical instructions
 
 ### Installation
@@ -90,8 +86,10 @@ Note: Take a look into ```config.php``` in order to see what properties can be a
     // Acme\MyBundle\Resources/contao/config.php
     
     $GLOBALS['STYLESHEET_MANAGER']['preprocessors']['less'] = [
-        'class' => '\Acme\MyBundle\Compiler\Less',
-        'cmd' => 'less ...'
+        'class'   => '\Acme\MyBundle\Compiler\Less',
+        'bin'     => '/usr/bin/less',
+        'cmdDev'  => '##lib## ...',
+        'cmdProd' => '##lib## ...',
     ];
     ```
 
@@ -107,8 +105,15 @@ Name | Arguments | Description
 ---- | --------- | -----------
 modifyFrontendPage | $strBuffer, $strTemplate | Triggers the compiling.
 
+## Notes on css generation on live systems
+
+On the live server we usually don't have preprocessors like compass installed. Because of that reason
+the library uses an already existing generated CSS file even if changes have been made on SCSS files on
+this live server (of course this generated CSS file might be not up to date but in most cases this is
+better than no CSS or some error message ;-)). If the necessary preprocessor like compass lib is in
+place even on the live server stylesheet manager regenerates the final CSS file.
+
 ## TODO
 
 - support for contao's tags "static", "media", ... in asset paths added to the according arrays in ```$GLOBALS```
 - accomplish auto triggering of scss compiling if an *imported* file is changed (currently only files listed in TL_CSS, TL_USER_CSS, TL_FRAMEWORK, and TL_STYLESHEET_MANAGER_CSS are inspected for changes) -> maybe using compass watch
-- in Contao 4.4 -> make use of different environments

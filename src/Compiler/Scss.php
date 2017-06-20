@@ -46,19 +46,31 @@ class Scss extends Compiler
             }
         }
 
-        file_put_contents($this->strTempDir . '/scss/composed.scss', $strData);
+        file_put_contents($this->strTempDir . '/scss/composed_' . $this->strMode . '.scss', $strData);
 
-        return $this->strTempDir . '/scss/composed.scss';
+        return $this->strTempDir . '/scss/composed_' . $this->strMode . '.scss';
     }
 
     public function compile($strComposedFile)
     {
-        $strCommand = str_replace('##temp_dir##', $this->strTempDir, $GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['cmdProd']);
+        $strCommand = str_replace(
+            '##lib##',
+            $GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['bin'],
+            $GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['cmd' . ucfirst($this->strMode)]
+        );
+
+        $strCommand = str_replace(
+            '##temp_dir##',
+            $this->strTempDir,
+            $strCommand
+        );
+
         $strCommand = str_replace(
             '##config_file##',
             TL_ROOT . '/' . ltrim($GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['config'], '/'),
             $strCommand
         );
+
         $strCommand = str_replace('##import_path##', TL_ROOT, $strCommand);
 
         exec($strCommand, $varOutput);

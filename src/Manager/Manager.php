@@ -13,15 +13,35 @@ class Manager
             return $strBuffer;
         }
 
-        $strTempDir = TL_ROOT . '/system/tmp/stylesheet-manager';
-        $strCssFile = \Config::get('stylesheetManagerCssFilename');
-        $strCssFileNoTimestamp = explode('?', $strCssFile)[0];
+        $blnUpdate       = false;
+        $strMode         = \System::getContainer()->get('kernel')->getEnvironment();
+        $strTempDir      = TL_ROOT . '/system/tmp/stylesheet-manager/' . $strMode;
+        $strCssFilesJson = TL_ROOT . '/system/config/stylesheet-manager.json';
+        $strCssFiles     = @file_get_contents($strCssFilesJson);
+
+        if (!$strCssFiles)
+        {
+            $blnUpdate   = true;
+            $strCssFiles = json_encode(
+                [
+                    'dev'  => '',
+                    'prod' => '',
+                ]
+            );
+
+            file_put_contents($strCssFilesJson, $strCssFiles);
+        }
+
+        $arrCssFiles = json_decode($strCssFiles, true);
+
+        $strCssFile            = $arrCssFiles[$strMode];
+        $strCssFileNoTimestamp = $strCssFile ? explode('?', $strCssFile)[0] : null;
 
         // preparation
         list($arrCoreFiles, $arrModuleFiles, $arrProjectFiles) = static::collectFiles();
 
         // check if a regeneration is needed
-        if (!$strCssFile || !file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp))
+        if ($blnUpdate || !$strCssFileNoTimestamp || !file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp))
         {
             $blnUpdate = true;
         }
@@ -44,39 +64,57 @@ class Manager
         if (!file_exists($strTempDir))
         {
             $blnUpdate = true;
-            mkdir($strTempDir);
+            mkdir($strTempDir, 0777, true);
         }
 
         if ($blnUpdate)
         {
-            static::writeFileInfoToFile($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $strTempDir);
-
-            // clean up
-            if (file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp))
-            {
-                unlink(TL_ROOT . '/' . $strCssFileNoTimestamp);
-            }
-
-            if (file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp . '.map'))
-            {
-                unlink(TL_ROOT . '/' . $strCssFileNoTimestamp . '.map');
-            }
-
             // preprocessor specifics
             $strActivePreprocessor = $GLOBALS['STYLESHEET_MANAGER']['activePreprocessor'];
 
             /** @var Compiler $objCompiler */
             $objCompiler = new $GLOBALS['STYLESHEET_MANAGER']['preprocessors'][$strActivePreprocessor]['class'];
-            $objCompiler->setTempDir($strTempDir);
 
-            $objCompiler->prepareTempDir();
-            $strComposedFile = $objCompiler->compose($arrCoreFiles, $arrModuleFiles, $arrProjectFiles);
-            $objCompiler->compile($strComposedFile);
+            if (!$objCompiler->checkIfLibExists())
+            {
+                if (!file_exists($strCssFileNoTimestamp))
+                {
+                    throw new \Exception(
+                        'Neither a previously generated CSS nor a the necessary SCSS lib found: '
+                        . $GLOBALS['STYLESHEET_MANAGER']['preprocessors'][$GLOBALS['STYLESHEET_MANAGER']['activePreprocessor']]['bin']
+                    );
+                }
 
-            // integrate in fe_page
-            $strCssFile = 'assets/css/composed.css?v=' . time();
+                // else use the existing css file without an exception
+            }
+            else
+            {
+                static::writeFileInfoToFile($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $strTempDir);
 
-            \Config::persist('stylesheetManagerCssFilename', $strCssFile);
+                // clean up
+                if ($strCssFileNoTimestamp && file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp))
+                {
+                    unlink(TL_ROOT . '/' . $strCssFileNoTimestamp);
+                }
+
+                if ($strCssFileNoTimestamp && file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp . '.map'))
+                {
+                    unlink(TL_ROOT . '/' . $strCssFileNoTimestamp . '.map');
+                }
+
+                // generate
+                $objCompiler->setTempDir($strTempDir);
+
+                $objCompiler->prepareTempDir();
+                $strComposedFile = $objCompiler->compose($arrCoreFiles, $arrModuleFiles, $arrProjectFiles);
+                $objCompiler->compile($strComposedFile);
+
+                // integrate in fe_page
+                $strCssFile = 'assets/css/composed_' . $strMode . '.css?v=' . time();
+
+                $arrCssFiles[$strMode] = $strCssFile;
+                file_put_contents($strCssFilesJson, json_encode($arrCssFiles));
+            }
         }
 
         return str_replace('<!-- stylesheetManagerCss -->', '<link rel="stylesheet" href="' . $strCssFile . '">', $strBuffer);
@@ -91,7 +129,7 @@ class Manager
                 return true;
             }
 
-            $intFileSize = filesize(TL_ROOT . '/' . $strFile);
+            $intFileSize   = filesize(TL_ROOT . '/' . $strFile);
             $intLastUpdate = filemtime(TL_ROOT . '/' . $strFile);
 
             if ($arrFileInfo[$strFile]['filesize'] != $intFileSize || $arrFileInfo[$strFile]['last_update'] != $intLastUpdate)
@@ -110,7 +148,7 @@ class Manager
         foreach (array_merge($arrCoreFiles, $arrModuleFiles, $arrProjectFiles) as $strFile)
         {
             $arrFileInfo[$strFile] = [
-                'filesize' => filesize(TL_ROOT . '/' . $strFile),
+                'filesize'    => filesize(TL_ROOT . '/' . $strFile),
                 'last_update' => filemtime(TL_ROOT . '/' . $strFile)
             ];
         }
@@ -134,9 +172,13 @@ class Manager
         {
             if (is_array($GLOBALS['TL_STYLESHEET_MANAGER_CSS']['core']))
             {
-                $arrCoreFiles = array_map(function($strFile) {
-                    return ltrim($strFile, '/');
-                }, $GLOBALS['TL_STYLESHEET_MANAGER_CSS']['core']);
+                $arrCoreFiles = array_map(
+                    function ($strFile)
+                    {
+                        return ltrim($strFile, '/');
+                    },
+                    $GLOBALS['TL_STYLESHEET_MANAGER_CSS']['core']
+                );
 
             }
             elseif (is_string($GLOBALS['TL_STYLESHEET_MANAGER_CSS']['core']))
@@ -174,9 +216,13 @@ class Manager
         {
             if (is_array($GLOBALS['TL_STYLESHEET_MANAGER_CSS']['project']))
             {
-                $arrProjectFiles = array_map(function($strFile) {
-                    return ltrim($strFile, '/');
-                }, $GLOBALS['TL_STYLESHEET_MANAGER_CSS']['project']);
+                $arrProjectFiles = array_map(
+                    function ($strFile)
+                    {
+                        return ltrim($strFile, '/');
+                    },
+                    $GLOBALS['TL_STYLESHEET_MANAGER_CSS']['project']
+                );
             }
             elseif (is_string($GLOBALS['TL_STYLESHEET_MANAGER_CSS']['project']))
             {

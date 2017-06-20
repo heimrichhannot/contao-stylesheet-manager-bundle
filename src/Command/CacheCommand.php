@@ -41,51 +41,37 @@ class CacheCommand extends AbstractLockedCommand
         $this->io      = new SymfonyStyle($input, $output);
         $this->rootDir = dirname($this->getContainer()->getParameter('kernel.root_dir'));
 
-        $tmpDir = $this->rootDir . '/system/tmp/stylesheet-manager';
-        $css    = $this->rootDir . '/assets/css/composed.css';
-        $cssMap = $this->rootDir . '/assets/css/composed.css.map';
+        $files = [
+            '/system/tmp/stylesheet-manager',
+            '/assets/css/composed_dev.css',
+            '/assets/css/composed_dev.css.map',
+            '/assets/css/composed_prod.css',
+            '/system/config/stylesheet-manager.json'
+        ];
 
         echo PHP_EOL;
 
-        if (file_exists($tmpDir))
+        foreach ($files as $file)
         {
-            static::deleteDirectory($tmpDir);
+            if (file_exists($this->rootDir . $file))
+            {
+                if (is_dir($this->rootDir . $file))
+                {
+                    static::deleteDirectory($this->rootDir . $file);
+                }
+                else
+                {
+                    unlink($this->rootDir . $file);
+                }
 
-            if (!file_exists($tmpDir))
-            {
-                echo str_replace($this->rootDir, '', $tmpDir) . ' deleted successfully' . PHP_EOL . PHP_EOL;
-            }
-            else
-            {
-                echo 'Error: ' . str_replace($this->rootDir, '', $tmpDir) . ' not deleted' . PHP_EOL . PHP_EOL;
-            }
-        }
-
-        if (file_exists($css))
-        {
-            unlink($css);
-
-            if (!file_exists($css))
-            {
-                echo str_replace($this->rootDir, '', $css) . ' deleted successfully' . PHP_EOL . PHP_EOL;
-            }
-            else
-            {
-                echo 'Error: ' . str_replace($this->rootDir, '', $css) . ' not deleted' . PHP_EOL . PHP_EOL;
-            }
-        }
-
-        if (file_exists($cssMap))
-        {
-            unlink($cssMap);
-
-            if (!file_exists($cssMap))
-            {
-                echo str_replace($this->rootDir, '', $cssMap) . ' deleted successfully' . PHP_EOL . PHP_EOL;
-            }
-            else
-            {
-                echo 'Error: ' . str_replace($this->rootDir, '', $cssMap) . ' not deleted' . PHP_EOL . PHP_EOL;
+                if (!file_exists($this->rootDir . $file))
+                {
+                    echo $file . ' deleted successfully' . PHP_EOL . PHP_EOL;
+                }
+                else
+                {
+                    echo 'Error: ' . $file . ' not deleted' . PHP_EOL . PHP_EOL;
+                }
             }
         }
 
