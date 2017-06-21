@@ -6,7 +6,7 @@ This module offers functionality for handling different types of stylesheets in 
 
 - expandable architecture (new preprocessors like LESS can be added easily)
 - SCSS
-    - uses locally installed compass for compiling SCSS files (usually ```/usr/bin/compass```)
+    - uses locally installed compass for compiling SCSS files (usually ```/usr/bin/env compass```)
     - full support for compass's config.rb
 - aggregating all files to a single CSS file
 - support for development and production environment
@@ -36,7 +36,7 @@ Note: This module is written in an expandable way, so new compilers can be added
 
 ### Installation
 
-1. Add the following code to a config.php of some of your modules (according to your project):
+1. Add the following code to a config.php of one of your modules (preferably some kind of module containing all the business logic of your project):
     ```
     $GLOBALS['TL_STYLESHEET_MANAGER_CSS'] = [
         'core'    => [
@@ -62,6 +62,10 @@ Note: Take a look into ```config.php``` in order to see what properties can be a
 ### Commands
 
 - clear the stylesheet manager cache: ```<contao dir>/vendor/bin/contao-console stylesheetmanager:cache:clear```
+
+### CSS generation and caching
+
+![CSS generation and caching](docs/css-generation.png)
 
 ### Add a new preprocessor
 
@@ -104,14 +108,6 @@ Note: Take a look into ```config.php``` in order to see what properties can be a
 Name | Arguments | Description
 ---- | --------- | -----------
 modifyFrontendPage | $strBuffer, $strTemplate | Triggers the compiling.
-
-## Notes on css generation on live systems
-
-On the live server we usually don't have preprocessors like compass installed. Because of that reason
-the library uses an already existing generated CSS file even if changes have been made on SCSS files on
-this live server (of course this generated CSS file might be not up to date but in most cases this is
-better than no CSS or some error message ;-)). If the necessary preprocessor like compass lib is in
-place even on the live server stylesheet manager regenerates the final CSS file.
 
 ## TODO
 
