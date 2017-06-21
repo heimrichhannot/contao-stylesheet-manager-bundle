@@ -8,16 +8,21 @@ abstract class Compiler
     protected $strMode;
 
     public abstract function prepareTempDir();
+
     public abstract function compose($arrCoreFiles, $arrModuleFiles, $arrProjectFiles);
+
     public abstract function compile($strComposedFile);
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->strMode = \System::getContainer()->get('kernel')->getEnvironment();
     }
 
     public function checkIfLibExists()
     {
-        return file_exists($GLOBALS['STYLESHEET_MANAGER']['preprocessors'][$GLOBALS['STYLESHEET_MANAGER']['activePreprocessor']]['bin']);
+        return `which ` . escapeshellarg(
+                $GLOBALS['STYLESHEET_MANAGER']['preprocessors'][$GLOBALS['STYLESHEET_MANAGER']['activePreprocessor']]['bin']
+            );
     }
 
     /**
