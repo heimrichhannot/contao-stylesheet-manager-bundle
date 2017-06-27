@@ -9,7 +9,7 @@ abstract class Compiler
 
     public abstract function prepareTempDir();
 
-    public abstract function compose($arrCoreFiles, $arrModuleFiles, $arrProjectFiles);
+    public abstract function compose($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $strGroup);
 
     public abstract function compile($strComposedFile);
 

@@ -43,10 +43,7 @@ class CacheCommand extends AbstractLockedCommand
 
         $files = [
             '/system/tmp/stylesheet-manager',
-            '/assets/css/composed_dev.css',
-            '/assets/css/composed_dev.css.map',
-            '/assets/css/composed_prod.css',
-            '/system/config/stylesheet-manager.json'
+            '/system/config/stylesheet-manager'
         ];
 
         echo PHP_EOL;
@@ -74,6 +71,12 @@ class CacheCommand extends AbstractLockedCommand
                 }
             }
         }
+
+        // composed
+        array_map('unlink', glob($this->rootDir . '/assets/css/*.css'));
+        array_map('unlink', glob($this->rootDir . '/assets/css/*.map'));
+
+        echo 'Cleared /assets/css from *.css and *.map files' . PHP_EOL . PHP_EOL;
 
         return 0;
     }

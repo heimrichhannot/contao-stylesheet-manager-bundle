@@ -8,15 +8,34 @@ class Manager
 {
     public static function run($strBuffer, $strTemplate)
     {
-        if ($strTemplate !== 'fe_page')
+        // restrict to fe_page (or derivates)
+        if (strpos($strTemplate, 'fe_page') === false)
+        {
+            return $strBuffer;
+        }
+
+        preg_match('@(<!-- stylesheetManagerCss\.(?<group>.+) -->)@', $strBuffer, $arrMatches);
+
+        if (!is_array($arrMatches) || empty($arrMatches))
+        {
+            return $strBuffer;
+        }
+
+        $strReplace = $arrMatches[0];
+
+        if (isset($arrMatches['group']))
+        {
+            $strGroup = $arrMatches['group'];
+        }
+        else
         {
             return $strBuffer;
         }
 
         $blnUpdate       = false;
         $strMode         = \System::getContainer()->get('kernel')->getEnvironment();
-        $strTempDir      = TL_ROOT . '/system/tmp/stylesheet-manager/' . $strMode;
-        $strCssFilesJson = TL_ROOT . '/system/config/stylesheet-manager.json';
+        $strTempDir      = TL_ROOT . '/system/tmp/stylesheet-manager/' . $strGroup . '/' . $strMode;
+        $strCssFilesJson = TL_ROOT . '/system/config/stylesheet-manager/' . $strGroup . '/stylesheet-manager.json';
         $strCssFiles     = @file_get_contents($strCssFilesJson);
 
         if (!$strCssFiles)
@@ -29,6 +48,13 @@ class Manager
                 ]
             );
 
+            $strBase = TL_ROOT . '/system/config/stylesheet-manager/' . $strGroup;
+
+            if (!file_exists($strBase))
+            {
+                mkdir($strBase, 0777, true);
+            }
+
             file_put_contents($strCssFilesJson, $strCssFiles);
         }
 
@@ -38,7 +64,7 @@ class Manager
         $strCssFileNoTimestamp = $strCssFile ? explode('?', $strCssFile)[0] : null;
 
         // preparation
-        list($arrCoreFiles, $arrModuleFiles, $arrProjectFiles) = static::collectFiles();
+        list($arrCoreFiles, $arrModuleFiles, $arrProjectFiles) = static::collectFiles($strGroup);
 
         // check if a regeneration is needed
         if ($blnUpdate || !$strCssFileNoTimestamp || !file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp))
@@ -106,18 +132,18 @@ class Manager
                 $objCompiler->setTempDir($strTempDir);
 
                 $objCompiler->prepareTempDir();
-                $strComposedFile = $objCompiler->compose($arrCoreFiles, $arrModuleFiles, $arrProjectFiles);
+                $strComposedFile = $objCompiler->compose($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $strGroup);
                 $objCompiler->compile($strComposedFile);
 
                 // integrate in fe_page
-                $strCssFile = 'assets/css/composed_' . $strMode . '.css?v=' . time();
+                $strCssFile = 'assets/css/composed_' . $strGroup . '_' . $strMode . '.css?v=' . time();
 
                 $arrCssFiles[$strMode] = $strCssFile;
                 file_put_contents($strCssFilesJson, json_encode($arrCssFiles));
             }
         }
 
-        return str_replace('<!-- stylesheetManagerCss -->', '<link rel="stylesheet" href="' . $strCssFile . '">', $strBuffer);
+        return str_replace($strReplace, '<link rel="stylesheet" href="' . $strCssFile . '">', $strBuffer);
     }
 
     private static function checkFilesForUpdate($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrFileInfo)
@@ -163,70 +189,75 @@ class Manager
         return $arrFile[0];
     }
 
-    private static function collectFiles()
+    private static function collectFiles($strGroup)
     {
+        $arrConfig = $GLOBALS['TL_STYLESHEET_MANAGER_CSS'][$strGroup];
+
         // core libs (loaded before everything else)
         $arrCoreFiles = [];
 
-        if (isset($GLOBALS['TL_STYLESHEET_MANAGER_CSS']['core']))
+        if (isset($arrConfig['core']))
         {
-            if (is_array($GLOBALS['TL_STYLESHEET_MANAGER_CSS']['core']))
+            if (is_array($arrConfig['core']))
             {
                 $arrCoreFiles = array_map(
                     function ($strFile)
                     {
                         return ltrim($strFile, '/');
                     },
-                    $GLOBALS['TL_STYLESHEET_MANAGER_CSS']['core']
+                    $arrConfig['core']
                 );
 
             }
-            elseif (is_string($GLOBALS['TL_STYLESHEET_MANAGER_CSS']['core']))
+            elseif (is_string($arrConfig['core']))
             {
-                $arrCoreFiles[] = ltrim($GLOBALS['TL_STYLESHEET_MANAGER_CSS']['core'], '/');
+                $arrCoreFiles[] = ltrim($arrConfig['core'], '/');
             }
         }
 
         // modules (contao's ordering used)
         $arrModuleFiles = [];
 
-        $arrTypes = [
-            'TL_FRAMEWORK_CSS',
-            'TL_CSS',
-            'TL_USER_CSS'
-        ];
-
-        foreach ($arrTypes as $strType)
+        if (!isset($arrConfig['skipModuleCss']) || !$arrConfig['skipModuleCss'])
         {
-            if (!isset($GLOBALS[$strType]) || !is_array($GLOBALS[$strType]))
-            {
-                continue;
-            }
+            $arrTypes = [
+                'TL_FRAMEWORK_CSS',
+                'TL_CSS',
+                'TL_USER_CSS'
+            ];
 
-            foreach ($GLOBALS[$strType] as $strName => $strPath)
+            foreach ($arrTypes as $strType)
             {
-                $arrModuleFiles[] = ltrim(static::stripStylesheetTags($strPath), '/');
+                if (!isset($GLOBALS[$strType]) || !is_array($GLOBALS[$strType]))
+                {
+                    continue;
+                }
+
+                foreach ($GLOBALS[$strType] as $strName => $strPath)
+                {
+                    $arrModuleFiles[] = ltrim(static::stripStylesheetTags($strPath), '/');
+                }
             }
         }
 
         // project (can override everything)
         $arrProjectFiles = [];
 
-        if (isset($GLOBALS['TL_STYLESHEET_MANAGER_CSS']['project']))
+        if (isset($arrConfig['project']))
         {
-            if (is_array($GLOBALS['TL_STYLESHEET_MANAGER_CSS']['project']))
+            if (is_array($arrConfig['project']))
             {
                 $arrProjectFiles = array_map(
                     function ($strFile)
                     {
                         return ltrim($strFile, '/');
                     },
-                    $GLOBALS['TL_STYLESHEET_MANAGER_CSS']['project']
+                    $arrConfig['project']
                 );
             }
-            elseif (is_string($GLOBALS['TL_STYLESHEET_MANAGER_CSS']['project']))
+            elseif (is_string($arrConfig['project']))
             {
-                $arrProjectFiles[] = ltrim($GLOBALS['TL_STYLESHEET_MANAGER_CSS']['project'], '/');
+                $arrProjectFiles[] = ltrim($arrConfig['project'], '/');
             }
         }
 

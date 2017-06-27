@@ -37,23 +37,39 @@ Note: This module is written in an expandable way, so new compilers can be added
 ### Installation
 
 1. Add the following code to a config.php of one of your modules (preferably some kind of module containing all the business logic of your project):
+
     ```
     $GLOBALS['TL_STYLESHEET_MANAGER_CSS'] = [
-        'core'    => [
-            'files/themes/my_project/scss/_variables.scss', // add the project's variables in order to override variables of libs like bootstrap
-            'files/themes/my_project/scss/_core.scss' // could contain libs like bootstrap or font awesome
+        'domain1' => [
+            'core'    => [
+                'files/themes/domain1/scss/_variables.scss', // add the project's variables in order to override variables of libs like bootstrap
+                'files/themes/domain1/scss/_core.scss' // could contain libs like bootstrap or font awesome
+            ],
+            'project' => [
+                'files/themes/domain1/scss/mixins/_columns.scss',
+                'files/themes/domain1/scss/components/_accordion.scss',
+                'files/themes/domain1/scss/pages/_home.scss'
+            ],
+            'skipModuleCss' => false // set to true if this domain doesn't need module CSS
         ],
-        'project' => [
-            'files/themes/my_project/scss/mixins/_columns.scss',
-            'files/themes/my_project/scss/components/_accordion.scss',
-            'files/themes/my_project/scss/pages/_home.scss'
+        'domain2' => [
+            'core'    => [
+                'files/themes/domain2/scss/_variables.scss', // add the project's variables in order to override variables of libs like bootstrap
+                'files/themes/domain2/scss/_core.scss' // could contain libs like bootstrap or font awesome
+            ],
+            'project' => [
+                'files/themes/domain2/scss/mixins/_columns.scss',
+                'files/themes/domain2/scss/components/_accordion.scss',
+                'files/themes/domain2/scss/pages/_home.scss'
+            ],
+            'skipModuleCss' => false // set to true if this domain doesn't need module CSS
         ]
     ];
     ```
-    
+
     __Important note__: Every file can import other files, but these imported files are currently *not* inspected for changes. At this stage it's the best way to add all your partial scss files to ```$GLOBALS['TL_STYLESHEET_MANAGER_CSS']``` as shown above.
 
-2. Copy the contao template fe_page.html5 to your contao instance's templates directory and replace ```<?= $this->stylesheets ?>``` by ```<!-- stylesheetManagerCss -->``` (CAUTION: including the comment characters!).
+2. Copy the contao template fe_page.html5 to your contao instance's templates directory and replace ```<?= $this->stylesheets ?>``` by ```<!-- stylesheetManagerCss.domain1 -->``` (CAUTION: including the comment characters! Adjust the name after the dot according to your domain name in ```$GLOBALS['TL_STYLESHEET_MANAGER_CSS']```).
 
 ### Configuration
 

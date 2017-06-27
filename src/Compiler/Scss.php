@@ -17,7 +17,7 @@ class Scss extends Compiler
         }
     }
 
-    public function compose($arrCoreFiles, $arrModuleFiles, $arrProjectFiles)
+    public function compose($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $strGroup)
     {
         $strData = '';
 
@@ -46,9 +46,9 @@ class Scss extends Compiler
             }
         }
 
-        file_put_contents($this->strTempDir . '/scss/composed_' . $this->strMode . '.scss', $strData);
+        file_put_contents($this->strTempDir . '/scss/composed_' . $strGroup . '_' . $this->strMode . '.scss', $strData);
 
-        return $this->strTempDir . '/scss/composed_' . $this->strMode . '.scss';
+        return $this->strTempDir . '/scss/composed_' . $strGroup . '_' . $this->strMode . '.scss';
     }
 
     public function compile($strComposedFile)
