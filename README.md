@@ -1,6 +1,6 @@
 # Contao Stylesheet Manager
 
-This module offers functionality for handling different types of stylesheets in Contao.
+This module offers functionality for generating an aggregated CSS file out of different types of stylesheets in Contao (preserving access to mixins and variables from nearly every file).
 
 ## Features
 

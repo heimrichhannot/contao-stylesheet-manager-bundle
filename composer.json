@@ -1,7 +1,7 @@
 {
     "name": "heimrichhannot/contao-stylesheet-manager-bundle",
-    "description":"Project module",
-    "keywords":["contao", "module", "developer"],
+    "description":"This module offers functionality for generating an aggregated CSS file out of different types of stylesheets in Contao (preserving access to mixins and variables from nearly every file).",
+    "keywords":["contao", "stylesheet", "sass", "scss", "css", "less", "manager", "module", "developer"],
     "type": "contao-module",
     "homepage":"https://bitbucket.com/heimrichhannot/contao-stylesheet-manager-bundle",
     "license":"LGPL-3.0+",
