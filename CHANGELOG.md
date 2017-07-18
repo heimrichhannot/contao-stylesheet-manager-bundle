@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.2] - 2017-07-18
+
+### Fixed
+- compass location (which doesn't work else)
+
 ## [2.0.1] - 2017-06-26
 
 ### Fixed
