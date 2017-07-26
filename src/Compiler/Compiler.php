@@ -20,9 +20,11 @@ abstract class Compiler
 
     public function checkIfLibExists()
     {
-        return `which ` . escapeshellarg(
+        $blnExists = shell_exec("which " . escapeshellarg(
                 $GLOBALS['STYLESHEET_MANAGER']['preprocessors'][$GLOBALS['STYLESHEET_MANAGER']['activePreprocessor']]['bin']
-            );
+        )) !== null;
+
+        return $blnExists;
     }
 
     /**
