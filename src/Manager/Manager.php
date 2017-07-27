@@ -103,6 +103,20 @@ class Manager
 
             if (!$objCompiler->checkIfLibExists())
             {
+                if (!$strCssFileNoTimestamp || !file_exists($strCssFileNoTimestamp))
+                {
+                    $strCssFile = 'assets/css/composed_' . $strGroup . '_' . $strMode . '.css';
+
+                    if (file_exists(TL_ROOT . '/' . $strCssFile))
+                    {
+                        $strCssFileNoTimestamp = $strCssFileNoTimestamp ?: $strCssFile;
+                        $strCssFile .= '?v=' . time();
+
+                        $arrCssFiles[$strMode] = $strCssFile;
+                        file_put_contents($strCssFilesJson, json_encode($arrCssFiles));
+                    }
+                }
+
                 if (!file_exists($strCssFileNoTimestamp))
                 {
                     throw new \Exception(
