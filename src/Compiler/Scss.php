@@ -55,23 +55,23 @@ class Scss extends Compiler
     {
         $strCommand = str_replace(
             '##lib##',
-            $GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['bin'],
+            Compiler::getExecutablePath(),
             $GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['cmd' . ucfirst($this->strMode)]
         );
 
         $strCommand = str_replace(
             '##temp_dir##',
-            $this->strTempDir,
+            escapeshellarg($this->strTempDir),
             $strCommand
         );
 
         $strCommand = str_replace(
             '##config_file##',
-            TL_ROOT . '/' . ltrim($GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['config'], '/'),
+            escapeshellarg(TL_ROOT . '/' . ltrim($GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['config'], '/')),
             $strCommand
         );
 
-        $strCommand = str_replace('##import_path##', TL_ROOT, $strCommand);
+        $strCommand = str_replace('##import_path##', escapeshellarg(TL_ROOT), $strCommand);
 
         exec($strCommand, $varOutput);
     }

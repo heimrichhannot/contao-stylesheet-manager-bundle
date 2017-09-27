@@ -101,7 +101,7 @@ class Manager
             /** @var Compiler $objCompiler */
             $objCompiler = new $GLOBALS['STYLESHEET_MANAGER']['preprocessors'][$strActivePreprocessor]['class'];
 
-            if (!$objCompiler->checkIfLibExists())
+            if ($objCompiler::getExecutablePath() === null)
             {
                 if (!$strCssFileNoTimestamp || !file_exists($strCssFileNoTimestamp))
                 {

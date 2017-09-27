@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.6] - 2017-09-27
+
+### Fixed
+- `compass` executable path under osx
+
 ## [2.0.5] - 2017-07-26
 
 ### Fixed

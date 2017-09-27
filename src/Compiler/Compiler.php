@@ -2,6 +2,8 @@
 
 namespace HeimrichHannot\StylesheetManagerBundle\Compiler;
 
+use Symfony\Component\Process\ExecutableFinder;
+
 abstract class Compiler
 {
     protected $strTempDir;
@@ -18,13 +20,15 @@ abstract class Compiler
         $this->strMode = \System::getContainer()->get('kernel')->getEnvironment();
     }
 
-    public function checkIfLibExists()
+    /**
+     * Get the compiler executable binary path
+     * @return string|null The executable path or null if not found
+     */
+    public static function getExecutablePath()
     {
-        $blnExists = shell_exec("which " . escapeshellarg(
-                $GLOBALS['STYLESHEET_MANAGER']['preprocessors'][$GLOBALS['STYLESHEET_MANAGER']['activePreprocessor']]['bin']
-        )) !== null;
-
-        return $blnExists;
+        $finder = new ExecutableFinder();
+        // mac executable = /usr/local/bin
+        return $finder->find($GLOBALS['STYLESHEET_MANAGER']['preprocessors'][$GLOBALS['STYLESHEET_MANAGER']['activePreprocessor']]['bin'], null, ['/usr/local/bin']);
     }
 
     /**
