@@ -8,12 +8,6 @@ class Manager
 {
     public static function run($strBuffer, $strTemplate)
     {
-        // restrict to fe_page (or derivates)
-        if (strpos($strTemplate, 'fe_page') === false)
-        {
-            return $strBuffer;
-        }
-
         preg_match('@(<!-- stylesheetManagerCss\.(?<group>.+) -->)@', $strBuffer, $arrMatches);
 
         if (!is_array($arrMatches) || empty($arrMatches))
