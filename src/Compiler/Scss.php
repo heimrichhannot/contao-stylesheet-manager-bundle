@@ -35,7 +35,12 @@ class Scss extends Compiler
 
                     // since CSS imports must be at the top of a css file (which would break the order)
                     // we must copy the file and change the extension to scss :-(
-                    copy(TL_ROOT . '/' . ltrim($strFile, '/'), $strTempScssFile);
+
+                    // support web folder
+                    $strPath = file_exists(TL_ROOT . '/' . ltrim($strFile, '/')) ?
+                        TL_ROOT . '/' . ltrim($strFile, '/') : TL_ROOT . '/web/' . ltrim($strFile, '/');
+
+                    copy($strPath, $strTempScssFile);
 
                     $strData .= '@import "' . basename($strFile, '.css') . '";' . PHP_EOL;
                 }

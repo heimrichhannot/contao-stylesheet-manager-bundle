@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.8] - 2017-10-16
+
+### Added
+- support for bundle css files symlinked in web folder
+
 ## [2.0.7] - 2017-10-09
 
 ### Changed

@@ -163,8 +163,11 @@ class Manager
                 return true;
             }
 
-            $intFileSize   = filesize(TL_ROOT . '/' . $strFile);
-            $intLastUpdate = filemtime(TL_ROOT . '/' . $strFile);
+            // support web folder
+            $strPath = file_exists(TL_ROOT . '/' . $strFile) ? TL_ROOT . '/' . $strFile : TL_ROOT . '/web/' . $strFile;
+
+            $intFileSize   = filesize($strPath);
+            $intLastUpdate = filemtime($strPath);
 
             if ($arrFileInfo[$strFile]['filesize'] != $intFileSize || $arrFileInfo[$strFile]['last_update'] != $intLastUpdate)
             {
@@ -181,9 +184,12 @@ class Manager
 
         foreach (array_merge($arrCoreFiles, $arrModuleFiles, $arrProjectFiles) as $strFile)
         {
+            // support web folder
+            $strPath = file_exists(TL_ROOT . '/' . $strFile) ? TL_ROOT . '/' . $strFile : TL_ROOT . '/web/' . $strFile;
+
             $arrFileInfo[$strFile] = [
-                'filesize'    => filesize(TL_ROOT . '/' . $strFile),
-                'last_update' => filemtime(TL_ROOT . '/' . $strFile)
+                'filesize'    => filesize($strPath),
+                'last_update' => filemtime($strPath)
             ];
         }
 
