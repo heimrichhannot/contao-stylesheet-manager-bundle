@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.0.1] - 2017-10-27
+
+### Removed
+- echo 1
+
 ## [3.0.0] - 2017-10-27
 
 ### Removed

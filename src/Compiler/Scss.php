@@ -82,7 +82,5 @@ class Scss extends Compiler
         $strCommand = str_replace('##import_path##', escapeshellarg(TL_ROOT), $strCommand);
 
         exec($strCommand, $varOutput);
-
-        echo 1;
     }
 }
