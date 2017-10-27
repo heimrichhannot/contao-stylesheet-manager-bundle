@@ -51,9 +51,12 @@ class Scss extends Compiler
             }
         }
 
-        file_put_contents($this->strTempDir . '/scss/composed_' . $strGroup . '_' . $this->strMode . '.scss', $strData);
+        $this->strTempFile = $this->strTempDir . '/scss/composed_' . $strGroup . '_' . $this->strMode . '.scss';
+        $this->strOutputFile = TL_ROOT . '/assets/css/composed_' . $strGroup . '_' . $this->strMode . '.css';
 
-        return $this->strTempDir . '/scss/composed_' . $strGroup . '_' . $this->strMode . '.scss';
+        file_put_contents($this->strTempFile, $strData);
+
+        return $this->strTempFile;
     }
 
     public function compile($strComposedFile)
@@ -65,19 +68,21 @@ class Scss extends Compiler
         );
 
         $strCommand = str_replace(
-            '##temp_dir##',
-            escapeshellarg($this->strTempDir),
+            '##temp_file##',
+            escapeshellarg($this->strTempFile),
             $strCommand
         );
 
         $strCommand = str_replace(
-            '##config_file##',
-            escapeshellarg(TL_ROOT . '/' . ltrim($GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['config'], '/')),
+            '##output_path##',
+            $this->strOutputFile,
             $strCommand
         );
 
         $strCommand = str_replace('##import_path##', escapeshellarg(TL_ROOT), $strCommand);
 
         exec($strCommand, $varOutput);
+
+        echo 1;
     }
 }

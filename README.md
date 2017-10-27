@@ -6,8 +6,7 @@ This module offers functionality for generating an aggregated CSS file out of di
 
 - expandable architecture (new preprocessors like LESS can be added easily)
 - SCSS
-    - uses locally installed compass for compiling SCSS files (usually ```/usr/bin/env compass```)
-    - full support for compass's config.rb
+    - uses locally installed sass for compiling SCSS files (usually ```/usr/bin/env sass```)
 - aggregating all files to a single CSS file
 - support for development and production environment
 - caching of the generated CSS file so that a full regeneration is only necessary if at least one of the linked files change
@@ -30,7 +29,7 @@ Note: Even though project stylesheets are loaded *after* everything else, there'
 Note: This module is written in an expandable way, so new compilers can be added easily (e.g. LESS).
 
 - CSS
-- SCSS (compiled by compass which is a requirement then -> tested successfully with version 1.0.3)
+- SCSS (compiled by sass which is a requirement then)
 
 ## Technical instructions
 
@@ -128,4 +127,4 @@ modifyFrontendPage | $strBuffer, $strTemplate | Triggers the compiling.
 ## TODO
 
 - support for contao's tags "static", "media", ... in asset paths added to the according arrays in ```$GLOBALS```
-- accomplish auto triggering of scss compiling if an *imported* file is changed (currently only files listed in TL_CSS, TL_USER_CSS, TL_FRAMEWORK, and TL_STYLESHEET_MANAGER_CSS are inspected for changes) -> maybe using compass watch
+- accomplish auto triggering of scss compiling if an *imported* file is changed (currently only files listed in TL_CSS, TL_USER_CSS, TL_FRAMEWORK, and TL_STYLESHEET_MANAGER_CSS are inspected for changes) -> maybe using sass watch

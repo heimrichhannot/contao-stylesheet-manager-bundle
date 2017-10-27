@@ -7,6 +7,8 @@ use Symfony\Component\Process\ExecutableFinder;
 abstract class Compiler
 {
     protected $strTempDir;
+    protected $strTempFile;
+    protected $strOutputFile;
     protected $strMode;
 
     public abstract function prepareTempDir();
@@ -45,5 +47,37 @@ abstract class Compiler
     public function setTempDir($strTempDir)
     {
         $this->strTempDir = $strTempDir;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTempFile()
+    {
+        return $this->strTempFile;
+    }
+
+    /**
+     * @param mixed $strTempFile
+     */
+    public function setTempFile($strTempFile)
+    {
+        $this->strTempFile = $strTempFile;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getOutputFile()
+    {
+        return $this->strOutputFile;
+    }
+
+    /**
+     * @param mixed $strOutputFile
+     */
+    public function setOutputFile($strOutputFile)
+    {
+        $this->strTempFile = $strOutputFile;
     }
 }

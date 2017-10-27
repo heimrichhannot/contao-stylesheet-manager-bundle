@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.0.0] - 2017-10-27
+
+### Removed
+- compass requirement for sass compiling -> now uses plain sass
+- config.rb
+
 ## [2.0.8] - 2017-10-16
 
 ### Added
