@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.1.0] - 2017-11-06
+
+### Added
+* Google Webfonts support (includes Webfonts set in Contao page layout settings)
+
 ## [3.0.1] - 2017-10-27
 
 ### Removed

@@ -2,10 +2,22 @@
 
 namespace HeimrichHannot\StylesheetManagerBundle\Manager;
 
+use Contao\LayoutModel;
+use Contao\System;
+use Contao\Template;
 use HeimrichHannot\StylesheetManagerBundle\Compiler\Compiler;
+use Contao\PageModel;
 
 class Manager
 {
+    /**
+     * Replaces the stylesheetmanager insert tag
+     *
+     * @param string $strBuffer
+     * @param string $strTemplate
+     * @return mixed
+     * @throws \Exception
+     */
     public static function run($strBuffer, $strTemplate)
     {
         preg_match('@(<!-- stylesheetManagerCss\.(?<group>.+) -->)@', $strBuffer, $arrMatches);
@@ -27,10 +39,15 @@ class Manager
         }
 
         $blnUpdate       = false;
-        $strMode         = \System::getContainer()->get('kernel')->getEnvironment();
+        $strMode         = System::getContainer()->get('kernel')->getEnvironment();
         $strTempDir      = TL_ROOT . '/system/tmp/stylesheet-manager/' . $strGroup . '/' . $strMode;
         $strCssFilesJson = TL_ROOT . '/system/config/stylesheet-manager/' . $strGroup . '/stylesheet-manager.json';
         $strCssFiles     = @file_get_contents($strCssFilesJson);
+        /**
+         * @var PageModel $objPage
+         */
+        global $objPage;
+        $pageLayout = LayoutModel::findById($objPage->layout);
 
         if (!$strCssFiles)
         {
@@ -151,7 +168,14 @@ class Manager
             }
         }
 
-        return str_replace($strReplace, '<link rel="stylesheet" href="' . $strCssFile . '">', $strBuffer);
+        $replace = '<link rel="stylesheet" href="' . $strCssFile . '">';
+
+        if ($webfonts = $pageLayout->webfonts)
+        {
+            $replace = Template::generateStyleTag('https://fonts.googleapis.com/css?family=' . str_replace('|', '%7C', $webfonts), 'all') . "\n".$replace;
+        }
+
+        return str_replace($strReplace, $replace, $strBuffer);
     }
 
     private static function checkFilesForUpdate($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrFileInfo)
