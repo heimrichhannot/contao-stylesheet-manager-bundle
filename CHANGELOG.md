@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.1.1] - 2017-11-08
+
+### Fixed
+* ensure that `assets/css` directory exists, before `scss` compiler tries to compile css file to `assets/css` 
+
 ## [3.1.0] - 2017-11-06
 
 ### Added
