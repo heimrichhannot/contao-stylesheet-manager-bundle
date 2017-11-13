@@ -15,7 +15,8 @@ $GLOBALS['STYLESHEET_MANAGER'] = [
             'class'   => '\HeimrichHannot\StylesheetManagerBundle\Compiler\Scss',
             'bin'     => 'sass',
             'cmdDev'  => '##lib## --style expanded --load-path ##import_path## ##temp_file## ##output_path##',
-            'cmdProd' => '##lib## --style compressed --load-path ##import_path## ##temp_file## ##output_path##',
+            'cmdProd' => '##lib## --style compressed --sourcemap=none --load-path ##import_path## ##temp_file## ##output_path##',
         ]
     ]
 ];
+

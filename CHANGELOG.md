@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.1.2] - 2017-11-13
+
+### Fixed
+* Disable source map files when in `prod` mode
+
 ## [3.1.1] - 2017-11-08
 
 ### Fixed
