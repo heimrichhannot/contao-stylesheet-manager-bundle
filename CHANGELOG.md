@@ -1,20 +1,25 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.1.3] - 2017-11-13
+
+### Fixed
+- fixed regexp for replacing in fe_page
+
 ## [3.1.2] - 2017-11-13
 
 ### Fixed
-* Disable source map files when in `prod` mode
+- Disable source map files when in `prod` mode
 
 ## [3.1.1] - 2017-11-08
 
 ### Fixed
-* ensure that `assets/css` directory exists, before `scss` compiler tries to compile css file to `assets/css` 
+- ensure that `assets/css` directory exists, before `scss` compiler tries to compile css file to `assets/css` 
 
 ## [3.1.0] - 2017-11-06
 
 ### Added
-* Google Webfonts support (includes Webfonts set in Contao page layout settings)
+- Google Webfonts support (includes Webfonts set in Contao page layout settings)
 
 ## [3.0.1] - 2017-10-27
 

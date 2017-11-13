@@ -20,7 +20,7 @@ class Manager
      */
     public static function run($strBuffer, $strTemplate)
     {
-        preg_match('@(<!-- stylesheetManagerCss\.(?<group>.+) -->)@', $strBuffer, $arrMatches);
+        preg_match('@(<!-- stylesheetManagerCss\.(?<group>[^>]+) -->)@', $strBuffer, $arrMatches);
 
         if (!is_array($arrMatches) || empty($arrMatches))
         {
