@@ -12,10 +12,11 @@ $GLOBALS['STYLESHEET_MANAGER'] = [
     'activePreprocessor' => 'scss',
     'preprocessors'      => [
         'scss' => [
-            'class'   => '\HeimrichHannot\StylesheetManagerBundle\Compiler\Scss',
-            'bin'     => 'sass',
-            'cmdDev'  => '##lib## --style expanded --load-path ##import_path## ##temp_file## ##output_path##',
-            'cmdProd' => '##lib## --style compressed --sourcemap=none --load-path ##import_path## ##temp_file## ##output_path##',
+            'class'                   => '\HeimrichHannot\StylesheetManagerBundle\Compiler\Scss',
+            'bin'                     => 'sass',
+            'cmdDev'                  => '##lib## --style expanded --load-path ##import_path## ##temp_file## ##output_path##',
+            'cmdProd'                 => '##lib## --style compressed --sourcemap=none --load-path ##import_path## ##temp_file## ##output_path##',
+            'recursivelyWatchImports' => true
         ]
     ]
 ];

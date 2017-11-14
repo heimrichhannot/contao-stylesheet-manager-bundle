@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.2.0] - 2017-11-14
+
+### Added
+- support for recursive watching for changes in @import'ed files (SCSS)
+
+### Fixed
+- issue concerning assets served by .public file
+
 ## [3.1.3] - 2017-11-13
 
 ### Fixed

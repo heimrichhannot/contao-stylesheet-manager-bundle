@@ -2,10 +2,15 @@
 
 namespace HeimrichHannot\StylesheetManagerBundle\Compiler;
 
+use HeimrichHannot\Haste\Util\Container;
+use HeimrichHannot\StylesheetManagerBundle\Manager\Manager;
 use Symfony\Component\Filesystem\Filesystem;
 
 class Scss extends Compiler
 {
+    protected static $allowedFileExtensions = ['sass', 'scss'];
+    protected static $allowedPrefixes       = ['_'];
+
     public function prepareTempDir()
     {
         if (!file_exists($this->strTempDir . '/css')) {
@@ -32,12 +37,7 @@ class Scss extends Compiler
 
                     // since CSS imports must be at the top of a css file (which would break the order)
                     // we must copy the file and change the extension to scss :-(
-
-                    // support web folder
-                    $strPath = file_exists(TL_ROOT . '/' . ltrim($strFile, '/')) ?
-                        TL_ROOT . '/' . ltrim($strFile, '/') : TL_ROOT . '/web/' . ltrim($strFile, '/');
-
-                    copy($strPath, $strTempScssFile);
+                    copy(Manager::getPossiblyPublicAssetFilePath($strFile), $strTempScssFile);
 
                     $strData .= '@import "' . basename($strFile, '.css') . '";' . PHP_EOL;
                 } elseif ($strExtension == 'scss') {
@@ -47,7 +47,7 @@ class Scss extends Compiler
         }
 
         $this->strTempFile   = $this->strTempDir . '/scss/composed_' . $strGroup . '_' . $this->strMode . '.scss';
-        $this->strOutputFile = TL_ROOT . '/assets/css/composed_' . $strGroup . '_' . $this->strMode . '.css';
+        $this->strOutputFile = Container::getProjectDir() . '/assets/css/composed_' . $strGroup . '_' . $this->strMode . '.css';
 
         file_put_contents($this->strTempFile, $strData);
 
@@ -78,9 +78,70 @@ class Scss extends Compiler
         $fs = new Filesystem();
         $fs->mkdir(\Contao\System::getContainer()->getParameter('kernel.project_dir') . '/assets/css');
 
-        $strCommand = str_replace('##import_path##', escapeshellarg(TL_ROOT), $strCommand);
+        $strCommand = str_replace('##import_path##', escapeshellarg(Container::getProjectDir()), $strCommand);
 
         exec($strCommand, $varOutput);
+    }
+
+    public function recursivelyCollectImportedFiles($arrFiles, $blnSkipRootFile = false)
+    {
+        $arrResult = [];
+
+        foreach ($arrFiles as $strFile) {
+            if (!$blnSkipRootFile)
+            {
+                $arrResult[] = $strFile;
+            }
+
+            if (!file_exists(Manager::getPossiblyPublicAssetFilePath($strFile))) {
+                throw new \Exception('Stylesheet manager: Source file "' . Manager::getPossiblyPublicAssetFilePath($strFile) . '" does not exist.');
+            }
+
+            $strExtension = pathinfo($strFile, PATHINFO_EXTENSION);
+
+            if (!in_array($strExtension, static::$allowedFileExtensions)) {
+                continue;
+            }
+
+            $strContent = file_get_contents(Manager::getPossiblyPublicAssetFilePath($strFile));
+
+            if ($strContent) {
+                preg_match_all('/@import\s*["\'](?<group>[^"\']+)["\'];/i', $strContent, $arrMatches);
+
+                if (is_array($arrMatches['group'])) {
+                    foreach ($arrMatches['group'] as $strImportFile) {
+                        $strImportFileDir = rtrim(pathinfo($strFile, PATHINFO_DIRNAME) . '/' . ltrim(pathinfo($strImportFile, PATHINFO_DIRNAME), '/'), '.');
+                        $strImportFileName = pathinfo($strImportFile, PATHINFO_FILENAME);
+
+                        $found = false;
+                        $strImportFileFullPath = '';
+
+                        // check the different variation possibilities
+                        foreach (array_merge([''], static::$allowedPrefixes) as $prefix) {
+                            foreach (static::$allowedFileExtensions as $extension) {
+                                $strPath = rtrim(Manager::getPossiblyPublicAssetFilePath($strImportFileDir), '/') . '/' . $prefix . $strImportFileName . '.' . $extension;
+
+                                if (file_exists($strPath)) {
+                                    $found = true;
+                                    $strImportFileFullPath = ltrim($strPath, Container::getProjectDir() . '/');
+                                    break 2;
+                                }
+                            }
+                        }
+
+                        if (!$found) {
+                            continue;
+                        }
+
+                        $arrResult = array_merge($arrResult, static::recursivelyCollectImportedFiles([
+                            $strImportFileFullPath
+                        ]));
+                    }
+                }
+            }
+        }
+
+        return $arrResult;
     }
 }
 

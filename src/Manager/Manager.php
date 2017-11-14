@@ -5,6 +5,7 @@ namespace HeimrichHannot\StylesheetManagerBundle\Manager;
 use Contao\LayoutModel;
 use Contao\System;
 use Contao\Template;
+use HeimrichHannot\Haste\Util\Container;
 use HeimrichHannot\StylesheetManagerBundle\Compiler\Compiler;
 use Contao\PageModel;
 
@@ -22,26 +23,22 @@ class Manager
     {
         preg_match('@(<!-- stylesheetManagerCss\.(?<group>[^>]+) -->)@', $strBuffer, $arrMatches);
 
-        if (!is_array($arrMatches) || empty($arrMatches))
-        {
+        if (!is_array($arrMatches) || empty($arrMatches)) {
             return $strBuffer;
         }
 
         $strReplace = $arrMatches[0];
 
-        if (isset($arrMatches['group']))
-        {
+        if (isset($arrMatches['group'])) {
             $strGroup = $arrMatches['group'];
-        }
-        else
-        {
+        } else {
             return $strBuffer;
         }
 
         $blnUpdate       = false;
         $strMode         = System::getContainer()->get('kernel')->getEnvironment();
-        $strTempDir      = TL_ROOT . '/system/tmp/stylesheet-manager/' . $strGroup . '/' . $strMode;
-        $strCssFilesJson = TL_ROOT . '/system/config/stylesheet-manager/' . $strGroup . '/stylesheet-manager.json';
+        $strTempDir      = Container::getProjectDir() . '/system/tmp/stylesheet-manager/' . $strGroup . '/' . $strMode;
+        $strCssFilesJson = Container::getProjectDir() . '/system/config/stylesheet-manager/' . $strGroup . '/stylesheet-manager.json';
         $strCssFiles     = @file_get_contents($strCssFilesJson);
         /**
          * @var PageModel $objPage
@@ -49,8 +46,7 @@ class Manager
         global $objPage;
         $pageLayout = LayoutModel::findById($objPage->layout);
 
-        if (!$strCssFiles)
-        {
+        if (!$strCssFiles) {
             $blnUpdate   = true;
             $strCssFiles = json_encode(
                 [
@@ -59,10 +55,9 @@ class Manager
                 ]
             );
 
-            $strBase = TL_ROOT . '/system/config/stylesheet-manager/' . $strGroup;
+            $strBase = Container::getProjectDir() . '/system/config/stylesheet-manager/' . $strGroup;
 
-            if (!file_exists($strBase))
-            {
+            if (!file_exists($strBase)) {
                 mkdir($strBase, 0777, true);
             }
 
@@ -74,62 +69,50 @@ class Manager
         $strCssFile            = $arrCssFiles[$strMode];
         $strCssFileNoTimestamp = $strCssFile ? explode('?', $strCssFile)[0] : null;
 
+        // preprocessor specifics
+        $strActivePreprocessor = $GLOBALS['STYLESHEET_MANAGER']['activePreprocessor'];
+
+        /** @var Compiler $objCompiler */
+        $objCompiler = new $GLOBALS['STYLESHEET_MANAGER']['preprocessors'][$strActivePreprocessor]['class'];
+
         // preparation
-        list($arrCoreFiles, $arrModuleFiles, $arrProjectFiles) = static::collectFiles($strGroup);
+        list($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrImportedFiles) = static::collectFiles($strGroup, $objCompiler);
 
         // check if a regeneration is needed
-        if ($blnUpdate || !$strCssFileNoTimestamp || !file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp))
-        {
+        if ($blnUpdate || !$strCssFileNoTimestamp || !file_exists(Container::getProjectDir() . '/' . $strCssFileNoTimestamp)) {
             $blnUpdate = true;
-        }
-        else
-        {
-            if (!file_exists($strTempDir . '/file-info.json'))
-            {
+        } else {
+            if (!file_exists($strTempDir . '/file-info.json')) {
                 $blnUpdate = true;
-            }
-            else
-            {
+            } else {
                 $arrFileInfo = json_decode(file_get_contents($strTempDir . '/file-info.json'), true);
 
                 // check for modified files
-                $blnUpdate = static::checkFilesForUpdate($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrFileInfo);
+                $blnUpdate = static::checkFilesForUpdate($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrImportedFiles, $arrFileInfo);
             }
         }
 
         // temp dir
-        if (!file_exists($strTempDir))
-        {
+        if (!file_exists($strTempDir)) {
             $blnUpdate = true;
             mkdir($strTempDir, 0777, true);
         }
 
-        if ($blnUpdate)
-        {
-            // preprocessor specifics
-            $strActivePreprocessor = $GLOBALS['STYLESHEET_MANAGER']['activePreprocessor'];
-
-            /** @var Compiler $objCompiler */
-            $objCompiler = new $GLOBALS['STYLESHEET_MANAGER']['preprocessors'][$strActivePreprocessor]['class'];
-
-            if ($objCompiler::getExecutablePath() === null)
-            {
-                if (!$strCssFileNoTimestamp || !file_exists($strCssFileNoTimestamp))
-                {
+        if ($blnUpdate) {
+            if ($objCompiler::getExecutablePath() === null) {
+                if (!$strCssFileNoTimestamp || !file_exists($strCssFileNoTimestamp)) {
                     $strCssFile = 'assets/css/composed_' . $strGroup . '_' . $strMode . '.css';
 
-                    if (file_exists(TL_ROOT . '/' . $strCssFile))
-                    {
+                    if (file_exists(Container::getProjectDir() . '/' . $strCssFile)) {
                         $strCssFileNoTimestamp = $strCssFileNoTimestamp ?: $strCssFile;
-                        $strCssFile .= '?v=' . time();
+                        $strCssFile            .= '?v=' . time();
 
                         $arrCssFiles[$strMode] = $strCssFile;
                         file_put_contents($strCssFilesJson, json_encode($arrCssFiles));
                     }
                 }
 
-                if (!file_exists($strCssFileNoTimestamp))
-                {
+                if (!file_exists($strCssFileNoTimestamp)) {
                     throw new \Exception(
                         'Neither a previously generated CSS nor a the necessary SCSS lib found: '
                         . $GLOBALS['STYLESHEET_MANAGER']['preprocessors'][$GLOBALS['STYLESHEET_MANAGER']['activePreprocessor']]['bin']
@@ -137,20 +120,16 @@ class Manager
                 }
 
                 // else use the existing css file without an exception
-            }
-            else
-            {
-                static::writeFileInfoToFile($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $strTempDir);
+            } else {
+                static::writeFileInfoToFile($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrImportedFiles, $strTempDir);
 
                 // clean up
-                if ($strCssFileNoTimestamp && file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp))
-                {
-                    unlink(TL_ROOT . '/' . $strCssFileNoTimestamp);
+                if ($strCssFileNoTimestamp && file_exists(Container::getProjectDir() . '/' . $strCssFileNoTimestamp)) {
+                    unlink(Container::getProjectDir() . '/' . $strCssFileNoTimestamp);
                 }
 
-                if ($strCssFileNoTimestamp && file_exists(TL_ROOT . '/' . $strCssFileNoTimestamp . '.map'))
-                {
-                    unlink(TL_ROOT . '/' . $strCssFileNoTimestamp . '.map');
+                if ($strCssFileNoTimestamp && file_exists(Container::getProjectDir() . '/' . $strCssFileNoTimestamp . '.map')) {
+                    unlink(Container::getProjectDir() . '/' . $strCssFileNoTimestamp . '.map');
                 }
 
                 // generate
@@ -170,31 +149,26 @@ class Manager
 
         $replace = '<link rel="stylesheet" href="' . $strCssFile . '">';
 
-        if ($webfonts = $pageLayout->webfonts)
-        {
-            $replace = Template::generateStyleTag('https://fonts.googleapis.com/css?family=' . str_replace('|', '%7C', $webfonts), 'all') . "\n".$replace;
+        if ($webfonts = $pageLayout->webfonts) {
+            $replace = Template::generateStyleTag('https://fonts.googleapis.com/css?family=' . str_replace('|', '%7C', $webfonts), 'all') . "\n" . $replace;
         }
 
         return str_replace($strReplace, $replace, $strBuffer);
     }
 
-    private static function checkFilesForUpdate($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrFileInfo)
+    private static function checkFilesForUpdate($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrImportedFiles, $arrFileInfo)
     {
-        foreach (array_merge($arrCoreFiles, $arrModuleFiles, $arrProjectFiles) as $strFile)
-        {
-            if (!isset($arrFileInfo[$strFile]))
-            {
+        foreach (array_merge($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrImportedFiles) as $strFile) {
+            if (!isset($arrFileInfo[$strFile])) {
                 return true;
             }
 
-            // support web folder
-            $strPath = file_exists(TL_ROOT . '/' . $strFile) ? TL_ROOT . '/' . $strFile : TL_ROOT . '/web/' . $strFile;
+            $strPath = static::getPossiblyPublicAssetFilePath($strFile);
 
             $intFileSize   = filesize($strPath);
             $intLastUpdate = filemtime($strPath);
 
-            if ($arrFileInfo[$strFile]['filesize'] != $intFileSize || $arrFileInfo[$strFile]['last_update'] != $intLastUpdate)
-            {
+            if ($arrFileInfo[$strFile]['filesize'] != $intFileSize || $arrFileInfo[$strFile]['last_update'] != $intLastUpdate) {
                 return true;
             }
         }
@@ -202,14 +176,12 @@ class Manager
         return false;
     }
 
-    private static function writeFileInfoToFile($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $strTempDir)
+    private static function writeFileInfoToFile($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrImportedFiles, $strTempDir)
     {
         $arrFileInfo = [];
 
-        foreach (array_merge($arrCoreFiles, $arrModuleFiles, $arrProjectFiles) as $strFile)
-        {
-            // support web folder
-            $strPath = file_exists(TL_ROOT . '/' . $strFile) ? TL_ROOT . '/' . $strFile : TL_ROOT . '/web/' . $strFile;
+        foreach (array_merge($arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrImportedFiles) as $strFile) {
+            $strPath = static::getPossiblyPublicAssetFilePath($strFile);
 
             $arrFileInfo[$strFile] = [
                 'filesize'    => filesize($strPath),
@@ -220,6 +192,20 @@ class Manager
         file_put_contents($strTempDir . '/file-info.json', json_encode($arrFileInfo));
     }
 
+    /**
+     * Prefixes a file path with "web/" if necessary
+     * @param $path string The path of a file relative to kernel.project_dir (NOT relative to contao.web_dir)
+     * @return string The *absolute* path relative to disk root
+     */
+    public static function getPossiblyPublicAssetFilePath($path)
+    {
+        if (file_exists(Container::getWebDir() . '/' . ltrim($path, '/'))) {
+            return Container::getWebDir() . '/' . ltrim($path, '/');
+        } else {
+            return Container::getProjectDir() . '/' . ltrim($path, '/');
+        }
+    }
+
     private static function stripStylesheetTags($strFile)
     {
         $arrFile = explode('|', $strFile);
@@ -227,28 +213,22 @@ class Manager
         return $arrFile[0];
     }
 
-    private static function collectFiles($strGroup)
+    private static function collectFiles($strGroup, Compiler $objCompiler)
     {
         $arrConfig = $GLOBALS['TL_STYLESHEET_MANAGER_CSS'][$strGroup];
 
         // core libs (loaded before everything else)
         $arrCoreFiles = [];
 
-        if (isset($arrConfig['core']))
-        {
-            if (is_array($arrConfig['core']))
-            {
+        if (isset($arrConfig['core'])) {
+            if (is_array($arrConfig['core'])) {
                 $arrCoreFiles = array_map(
-                    function ($strFile)
-                    {
+                    function ($strFile) {
                         return ltrim($strFile, '/');
                     },
                     $arrConfig['core']
                 );
-
-            }
-            elseif (is_string($arrConfig['core']))
-            {
+            } elseif (is_string($arrConfig['core'])) {
                 $arrCoreFiles[] = ltrim($arrConfig['core'], '/');
             }
         }
@@ -256,23 +236,19 @@ class Manager
         // modules (contao's ordering used)
         $arrModuleFiles = [];
 
-        if (!isset($arrConfig['skipModuleCss']) || !$arrConfig['skipModuleCss'])
-        {
+        if (!isset($arrConfig['skipModuleCss']) || !$arrConfig['skipModuleCss']) {
             $arrTypes = [
                 'TL_FRAMEWORK_CSS',
                 'TL_CSS',
                 'TL_USER_CSS'
             ];
 
-            foreach ($arrTypes as $strType)
-            {
-                if (!isset($GLOBALS[$strType]) || !is_array($GLOBALS[$strType]))
-                {
+            foreach ($arrTypes as $strType) {
+                if (!isset($GLOBALS[$strType]) || !is_array($GLOBALS[$strType])) {
                     continue;
                 }
 
-                foreach ($GLOBALS[$strType] as $strName => $strPath)
-                {
+                foreach ($GLOBALS[$strType] as $strName => $strPath) {
                     $arrModuleFiles[] = ltrim(static::stripStylesheetTags($strPath), '/');
                 }
             }
@@ -281,24 +257,30 @@ class Manager
         // project (can override everything)
         $arrProjectFiles = [];
 
-        if (isset($arrConfig['project']))
-        {
-            if (is_array($arrConfig['project']))
-            {
+        if (isset($arrConfig['project'])) {
+            if (is_array($arrConfig['project'])) {
                 $arrProjectFiles = array_map(
-                    function ($strFile)
-                    {
+                    function ($strFile) {
                         return ltrim($strFile, '/');
                     },
                     $arrConfig['project']
                 );
-            }
-            elseif (is_string($arrConfig['project']))
-            {
+            } elseif (is_string($arrConfig['project'])) {
                 $arrProjectFiles[] = ltrim($arrConfig['project'], '/');
             }
         }
 
-        return [$arrCoreFiles, $arrModuleFiles, $arrProjectFiles];
+        // also collect imported files
+        $arrImportedFiles = [];
+
+        if ($GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['recursivelyWatchImports'])
+        {
+            foreach ([$arrCoreFiles, $arrModuleFiles, $arrProjectFiles] as $arrFiles)
+            {
+                $arrImportedFiles = array_merge($arrImportedFiles, $objCompiler->recursivelyCollectImportedFiles($arrFiles, true));
+            }
+        }
+
+        return [$arrCoreFiles, $arrModuleFiles, $arrProjectFiles, $arrImportedFiles];
     }
 }

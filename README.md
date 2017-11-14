@@ -8,9 +8,10 @@ This module offers functionality for generating an aggregated CSS file out of di
 - SCSS
     - uses locally installed sass for compiling SCSS files (usually ```/usr/bin/env sass```)
 - aggregating all files to a single CSS file
-- support for development and production environment
+- support for development and production environment (including css map in dev environment and minification aka compression in production environment)
 - caching of the generated CSS file so that a full regeneration is only necessary if at least one of the linked files change
-- a random string is added to the name of the generated css file to bypass browser caches
+- recursive watching for changes of all imported scss files
+- a random string is added to the name of the generated css file to bypass browser cache
 
 ## Possible types of stylesheets
 
@@ -42,31 +43,27 @@ Note: This module is written in an expandable way, so new compilers can be added
         'domain1' => [
             'core'    => [
                 'files/themes/domain1/scss/_variables.scss', // add the project's variables in order to override variables of libs like bootstrap
-                'files/themes/domain1/scss/_core.scss' // could contain libs like bootstrap or font awesome
+                'files/themes/domain1/scss/_core.scss' // could import libs like bootstrap or font awesome
             ],
             'project' => [
-                'files/themes/domain1/scss/mixins/_columns.scss',
-                'files/themes/domain1/scss/components/_accordion.scss',
-                'files/themes/domain1/scss/pages/_home.scss'
+                'files/themes/domain2/scss/project.scss' // could import other scss files which are also watched by default
             ],
             'skipModuleCss' => false // set to true if this domain doesn't need module CSS
         ],
         'domain2' => [
             'core'    => [
                 'files/themes/domain2/scss/_variables.scss', // add the project's variables in order to override variables of libs like bootstrap
-                'files/themes/domain2/scss/_core.scss' // could contain libs like bootstrap or font awesome
+                'files/themes/domain2/scss/_core.scss' // could import libs like bootstrap or font awesome
             ],
             'project' => [
-                'files/themes/domain2/scss/mixins/_columns.scss',
-                'files/themes/domain2/scss/components/_accordion.scss',
-                'files/themes/domain2/scss/pages/_home.scss'
+                'files/themes/domain2/scss/project.scss' // could import other scss files which are also watched by default
             ],
             'skipModuleCss' => false // set to true if this domain doesn't need module CSS
         ]
     ];
     ```
 
-    __Important note__: Every file can import other files, but these imported files are currently *not* inspected for changes. At this stage it's the best way to add all your partial scss files to ```$GLOBALS['TL_STYLESHEET_MANAGER_CSS']``` as shown above.
+    __Important note__: Every file can import other files. These files are also watched for changes. If you don't want that (e.g. due to performance issues), you can disable this feature by setting `$GLOBALS['STYLESHEET_MANAGER']['preprocessors']['scss']['recursivelyWatchImports'] = false`.
 
 2. Copy the contao template fe_page.html5 to your contao instance's templates directory and replace ```<?= $this->stylesheets ?>``` by ```<!-- stylesheetManagerCss.domain1 -->``` (CAUTION: including the comment characters! Adjust the name after the dot according to your domain name in ```$GLOBALS['TL_STYLESHEET_MANAGER_CSS']```).
 
@@ -105,10 +102,11 @@ Note: Take a look into ```config.php``` in order to see what properties can be a
     // Acme\MyBundle\Resources/contao/config.php
     
     $GLOBALS['STYLESHEET_MANAGER']['preprocessors']['less'] = [
-        'class'   => '\Acme\MyBundle\Compiler\Less',
-        'bin'     => '/usr/bin/less',
-        'cmdDev'  => '##lib## ...',
-        'cmdProd' => '##lib## ...',
+        'class'                   => '\Acme\MyBundle\Compiler\Less',
+        'bin'                     => '/usr/bin/less',
+        'cmdDev'                  => '##lib## ...',
+        'cmdProd'                 => '##lib## ...',
+        'recursivelyWatchImports' => true
     ];
     ```
 
@@ -127,4 +125,3 @@ modifyFrontendPage | $strBuffer, $strTemplate | Triggers the compiling.
 ## TODO
 
 - support for contao's tags "static", "media", ... in asset paths added to the according arrays in ```$GLOBALS```
-- accomplish auto triggering of scss compiling if an *imported* file is changed (currently only files listed in TL_CSS, TL_USER_CSS, TL_FRAMEWORK, and TL_STYLESHEET_MANAGER_CSS are inspected for changes) -> maybe using sass watch

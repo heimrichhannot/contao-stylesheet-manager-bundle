@@ -17,6 +17,8 @@ abstract class Compiler
 
     public abstract function compile($strComposedFile);
 
+    public abstract function recursivelyCollectImportedFiles($strComposedFile, $blnSkipRootFile = false);
+
     public function __construct()
     {
         $this->strMode = \System::getContainer()->get('kernel')->getEnvironment();
