@@ -9,7 +9,7 @@ use Symfony\Component\Filesystem\Filesystem;
 class Scss extends Compiler
 {
     protected static $allowedFileExtensions = ['sass', 'scss'];
-    protected static $allowedPrefixes       = ['_'];
+    protected static $allowedPrefixes = ['_'];
 
     public function prepareTempDir()
     {
@@ -88,8 +88,7 @@ class Scss extends Compiler
         $arrResult = [];
 
         foreach ($arrFiles as $strFile) {
-            if (!$blnSkipRootFile)
-            {
+            if (!$blnSkipRootFile) {
                 $arrResult[] = $strFile;
             }
 
@@ -110,10 +109,10 @@ class Scss extends Compiler
 
                 if (is_array($arrMatches['group'])) {
                     foreach ($arrMatches['group'] as $strImportFile) {
-                        $strImportFileDir = rtrim(pathinfo($strFile, PATHINFO_DIRNAME) . '/' . ltrim(pathinfo($strImportFile, PATHINFO_DIRNAME), '/'), '.');
+                        $strImportFileDir  = rtrim(pathinfo($strFile, PATHINFO_DIRNAME) . '/' . ltrim(pathinfo($strImportFile, PATHINFO_DIRNAME), '/'), '.');
                         $strImportFileName = pathinfo($strImportFile, PATHINFO_FILENAME);
 
-                        $found = false;
+                        $found                 = false;
                         $strImportFileFullPath = '';
 
                         // check the different variation possibilities
@@ -123,7 +122,12 @@ class Scss extends Compiler
 
                                 if (file_exists($strPath)) {
                                     $found = true;
-                                    $strImportFileFullPath = ltrim($strPath, Container::getProjectDir() . '/');
+
+                                    $prefix = Container::getProjectDir() . DIRECTORY_SEPARATOR;
+
+                                    if (substr($strPath, 0, strlen($prefix)) == $prefix) {
+                                        $strImportFileFullPath = substr($strPath, strlen($prefix));
+                                    }
                                     break 2;
                                 }
                             }
