@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.2.2] - 2018-01-11
+
+### Fixed
+- output path containing spaces now supported
+
 ## [3.2.1] - 2017-11-14
 
 ### Fixed

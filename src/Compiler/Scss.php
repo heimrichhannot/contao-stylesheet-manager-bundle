@@ -70,7 +70,7 @@ class Scss extends Compiler
 
         $strCommand = str_replace(
             '##output_path##',
-            $this->strOutputFile,
+            escapeshellarg($this->strOutputFile),
             $strCommand
         );
 
