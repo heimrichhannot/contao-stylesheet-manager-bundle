@@ -14,8 +14,8 @@ $GLOBALS['STYLESHEET_MANAGER'] = [
         'scss' => [
             'class'                   => '\HeimrichHannot\StylesheetManagerBundle\Compiler\Scss',
             'bin'                     => 'sass',
-            'cmdDev'                  => '##lib## --style expanded --load-path ##import_path## ##temp_file## ##output_path##',
-            'cmdProd'                 => '##lib## --style compressed --sourcemap=none --load-path ##import_path## ##temp_file## ##output_path##',
+            'cmdDev'                  => sprintf('##lib## --default-encoding=%s --style expanded --load-path ##import_path## ##temp_file## ##output_path##', strtoupper(\Contao\Config::get('characterSet'))),
+            'cmdProd'                 => sprintf('##lib## --default-encoding=%s --style compressed --sourcemap=none --load-path ##import_path## ##temp_file## ##output_path##', strtoupper(\Contao\Config::get('characterSet'))),
             'recursivelyWatchImports' => true
         ]
     ]
