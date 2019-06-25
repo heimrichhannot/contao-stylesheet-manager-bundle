@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.2.4] - 2019-06-25
+
+### Removed
+- `--default-encoding=` argument for compatibility to Dart Sass
+
 ## [3.2.3] - 2018-02-09
 
 ### Added
